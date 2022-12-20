@@ -150,12 +150,12 @@ abstract contract ReaperBaseStrategyv3_1 is
      *      be called by the vault. _amount must be valid and security fee
      *      is deducted up-front.
      */
-    function withdraw(uint256 _amount) external override {
+    function withdraw(uint256 _amount, address _user) external override {
         require(msg.sender == vault);
         require(_amount != 0);
         require(_amount <= balanceOf());
 
-        if (blacklistedAddresses.contains(tx.origin)) {
+        if (blacklistedAddresses.contains(_user)) {
             uint256 withdrawFee = (_amount * securityFee) / PERCENT_DIVISOR;
             _amount -= withdrawFee;
         }
