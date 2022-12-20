@@ -10,7 +10,7 @@ import "oz-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "oz-upgradeable/security/PausableUpgradeable.sol";
 import "oz-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
 
-abstract contract ReaperBaseStrategyv3 is
+abstract contract ReaperBaseStrategyv3_1 is
     IStrategy,
     UUPSUpgradeable,
     AccessControlEnumerableUpgradeable,
