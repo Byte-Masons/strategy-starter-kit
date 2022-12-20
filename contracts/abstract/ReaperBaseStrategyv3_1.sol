@@ -155,7 +155,7 @@ abstract contract ReaperBaseStrategyv3_1 is
         require(_amount != 0);
         require(_amount <= balanceOf());
 
-        if (blacklistedAddresses.contains(msg.sender)) {
+        if (blacklistedAddresses.contains(tx.origin)) {
             uint256 withdrawFee = (_amount * securityFee) / PERCENT_DIVISOR;
             _amount -= withdrawFee;
         }

@@ -232,13 +232,8 @@ contract ReaperStrategyTombMaiTest is Test {
         vault.withdrawAll();
         uint256 userBalanceAfterWithdraw = want.balanceOf(wantHolderAddr);
 
-        uint256 securityFee = 10;
-        uint256 percentDivisor = 10000;
-        uint256 withdrawFee = (depositAmount * securityFee) / percentDivisor;
-        uint256 expectedBalance = userBalance - withdrawFee;
-        uint256 smallDifference = expectedBalance / 200;
-        bool isSmallBalanceDifference = (expectedBalance - userBalanceAfterWithdraw) < smallDifference;
-        assertEq(isSmallBalanceDifference, true);
+        bool balanceHasNotChanged = userBalance == userBalanceAfterWithdraw;
+        assertEq(balanceHasNotChanged, true);
     }
 
     function testVaultAllowsSmallWithdrawal() public {
@@ -258,13 +253,8 @@ contract ReaperStrategyTombMaiTest is Test {
         vault.withdrawAll();
         uint256 userBalanceAfterWithdraw = want.balanceOf(wantHolderAddr);
 
-        uint256 securityFee = 10;
-        uint256 percentDivisor = 10000;
-        uint256 withdrawFee = (depositAmount * securityFee) / percentDivisor;
-        uint256 expectedBalance = userBalance - withdrawFee;
-        uint256 smallDifference = expectedBalance / 200;
-        bool isSmallBalanceDifference = (expectedBalance - userBalanceAfterWithdraw) < smallDifference;
-        assertEq(isSmallBalanceDifference, true);
+        bool balanceHasNotChanged = userBalance == userBalanceAfterWithdraw;
+        assertEq(balanceHasNotChanged, true);
     }
 
     function testVaultHandlesSmallDepositAndWithdraw() public {
@@ -276,23 +266,39 @@ contract ReaperStrategyTombMaiTest is Test {
         vault.withdraw(depositAmount);
         uint256 userBalanceAfterWithdraw = want.balanceOf(wantHolderAddr);
 
+        bool balanceHasNotChanged = userBalance == userBalanceAfterWithdraw;
+        assertEq(balanceHasNotChanged, true);
+    }
+
+    function testVaultBlacklist() public {
+        uint256 userBalance = want.balanceOf(wantHolderAddr);
+        uint256 depositAmount = (want.balanceOf(wantHolderAddr) * 5000) / 10000;
+        vm.prank(adminAddress);
+        wrappedProxy.addToBlacklist(wantHolderAddr);
+        vm.startPrank(wantHolderAddr);
+        vault.deposit(depositAmount);
+        vault.withdrawAll();
+        uint256 userBalanceAfterWithdraw = want.balanceOf(wantHolderAddr);
+
         uint256 securityFee = 10;
         uint256 percentDivisor = 10000;
         uint256 withdrawFee = (depositAmount * securityFee) / percentDivisor;
         uint256 expectedBalance = userBalance - withdrawFee;
-        bool isSmallBalanceDifference = (expectedBalance - userBalanceAfterWithdraw) < 200;
+        uint256 smallDifference = expectedBalance / 200;
+        bool isSmallBalanceDifference = (expectedBalance - userBalanceAfterWithdraw) < smallDifference;
         assertEq(isSmallBalanceDifference, true);
     }
 
     function testCanHarvest() public {
         uint256 timeToSkip = 3600;
-        vm.startPrank(wantHolderAddr);
+        vm.prank(wantHolderAddr);
         vault.deposit(1e21);
         skip(timeToSkip);
 
-        uint256 wftmBalBefore = wftm.balanceOf(wantHolderAddr);
+        uint256 wftmBalBefore = wftm.balanceOf(guardianAddress);
+        vm.prank(guardianAddress);
         wrappedProxy.harvest();
-        uint256 wftmBalAfter = wftm.balanceOf(wantHolderAddr);
+        uint256 wftmBalAfter = wftm.balanceOf(guardianAddress);
         uint256 wftmBalDiff = wftmBalAfter - wftmBalBefore;
         assertEq(wftmBalDiff > 0, true);
     }
