@@ -8,6 +8,7 @@ import "oz-upgradeable/access/AccessControlEnumerableUpgradeable.sol";
 import "oz-upgradeable/proxy/utils/Initializable.sol";
 import "oz-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "oz-upgradeable/security/PausableUpgradeable.sol";
+import "oz-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
 
 abstract contract ReaperBaseStrategyv3 is
     IStrategy,
@@ -15,6 +16,7 @@ abstract contract ReaperBaseStrategyv3 is
     AccessControlEnumerableUpgradeable,
     PausableUpgradeable
 {
+    using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     uint256 public constant PERCENT_DIVISOR = 10_000;
     uint256 public constant ONE_YEAR = 365 days;
     uint256 public constant UPGRADE_TIMELOCK = 48 hours; // minimum 48 hours for RF
@@ -84,6 +86,12 @@ abstract contract ReaperBaseStrategyv3 is
     uint256 public securityFee;
 
     /**
+    * @dev List of addresses we want to take a security fee from on withdraw
+    * as a way to prevent those from sandwich attacking the strategy.
+    */
+    EnumerableSetUpgradeable.AddressSet private blacklistedAddresses;
+
+    /**
      * {TotalFeeUpdated} Event that is fired each time the total fee is updated.
      * {FeesUpdated} Event that is fired each time callFee+treasuryFee are updated.
      * {StratHarvest} Event that is fired each time the strategy gets harvested.
@@ -147,8 +155,10 @@ abstract contract ReaperBaseStrategyv3 is
         require(_amount != 0);
         require(_amount <= balanceOf());
 
-        uint256 withdrawFee = (_amount * securityFee) / PERCENT_DIVISOR;
-        _amount -= withdrawFee;
+        if (blacklistedAddresses.contains(msg.sender)) {
+            uint256 withdrawFee = (_amount * securityFee) / PERCENT_DIVISOR;
+            _amount -= withdrawFee;
+        }
 
         _withdraw(_amount);
     }
@@ -158,6 +168,7 @@ abstract contract ReaperBaseStrategyv3 is
      *      override _harvestCore() and implement their specific logic in it.
      */
     function harvest() external override whenNotPaused returns (uint256 callerFee) {
+        _atLeastRole(KEEPER);
         callerFee = _harvestCore();
 
         if (block.timestamp >= harvestLog[harvestLog.length - 1].timestamp + harvestLogCadence) {
@@ -304,6 +315,20 @@ abstract contract ReaperBaseStrategyv3 is
         }
 
         return -int256(yearlyUnsignedPercentageChange);
+    }
+
+    function addToBlacklist(address _user) external returns (bool) {
+        _atLeastRole(ADMIN);
+        return blacklistedAddresses.add(_user);
+    }
+
+    function removeFromBlacklist(address _user) external returns (bool) {
+        _atLeastRole(ADMIN);
+        return blacklistedAddresses.remove(_user);
+    }
+
+    function isBlacklisted(address _user) external view returns (bool) {
+        return blacklistedAddresses.contains(_user);
     }
 
     /**
