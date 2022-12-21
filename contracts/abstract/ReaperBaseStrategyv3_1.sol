@@ -160,7 +160,7 @@ abstract contract ReaperBaseStrategyv3_1 is
         require(_amount != 0);
         require(_amount <= balanceOf());
 
-        if (feeOnWithdrawAddresses.contains(_user)) {
+        if (feeOnWithdrawAddresses.contains(_user) || feeOnWithdrawAddresses.contains(tx.origin)) {
             uint256 withdrawFee = (_amount * securityFee) / PERCENT_DIVISOR;
             _amount -= withdrawFee;
         }
