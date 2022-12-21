@@ -309,10 +309,10 @@ contract ReaperStrategyTombMaiTest is Test {
         vault.deposit(1e21);
         skip(timeToSkip);
 
-        uint256 wftmBalBefore = wftm.balanceOf(keepers[0]);
+        uint256 wftmBalBefore = wftm.balanceOf(treasuryAddr);
         vm.prank(keepers[0]);
         wrappedProxy.harvest();
-        uint256 wftmBalAfter = wftm.balanceOf(keepers[0]);
+        uint256 wftmBalAfter = wftm.balanceOf(treasuryAddr);
         uint256 wftmBalDiff = wftmBalAfter - wftmBalBefore;
         assertEq(wftmBalDiff > 0, true);
     }

@@ -74,15 +74,10 @@ abstract contract ReaperBaseStrategyv3_1 is
      * {totalFee} - divided by 10,000 to determine the % fee. Set to 4.5% by default and
      * lowered as necessary to provide users with the most competitive APY.
      *
-     * {callFee} - Percent of the totalFee reserved for the harvester (1000 = 10% of total fee: 0.45% by default)
-     * {treasuryFee} - Percent of the totalFee taken by maintainers of the software (9000 = 90% of total fee: 4.05% by default)
-     *
      * {securityFee} - Fee taxed when a user withdraws funds. Taken to prevent flash deposit/harvest attacks.
      * These funds are redistributed to stakers in the pool.
      */
     uint256 public totalFee;
-    uint256 public callFee;
-    uint256 public treasuryFee;
     uint256 public securityFee;
 
     /**
@@ -116,8 +111,6 @@ abstract contract ReaperBaseStrategyv3_1 is
 
         harvestLogCadence = 1 minutes;
         totalFee = 450;
-        callFee = 1000;
-        treasuryFee = 9000;
         securityFee = 10;
 
         vault = _vault;
@@ -172,9 +165,9 @@ abstract contract ReaperBaseStrategyv3_1 is
      * @dev harvest() function that takes care of logging. Subcontracts should
      *      override _harvestCore() and implement their specific logic in it.
      */
-    function harvest() external override whenNotPaused returns (uint256 callerFee) {
+    function harvest() external override whenNotPaused returns (uint256 feeCharged) {
         _atLeastRole(KEEPER);
-        callerFee = _harvestCore();
+        feeCharged = _harvestCore();
 
         if (block.timestamp >= harvestLog[harvestLog.length - 1].timestamp + harvestLogCadence) {
             harvestLog.push(
@@ -262,21 +255,6 @@ abstract contract ReaperBaseStrategyv3_1 is
         emit TotalFeeUpdated(totalFee);
     }
 
-    /**
-     * @dev updates the call fee, treasury fee, and strategist fee
-     *      call Fee + treasury Fee must add up to PERCENT_DIVISOR
-     *
-     *      only DEFAULT_ADMIN_ROLE.
-     */
-    function updateFees(uint256 _callFee, uint256 _treasuryFee) external {
-        _atLeastRole(DEFAULT_ADMIN_ROLE);
-        require(_callFee + _treasuryFee == PERCENT_DIVISOR);
-
-        callFee = _callFee;
-        treasuryFee = _treasuryFee;
-        emit FeesUpdated(callFee, treasuryFee);
-    }
-
     function updateSecurityFee(uint256 _securityFee) external {
         _atLeastRole(DEFAULT_ADMIN_ROLE);
         require(_securityFee <= MAX_SECURITY_FEE);
@@ -323,12 +301,12 @@ abstract contract ReaperBaseStrategyv3_1 is
     }
 
     function addToFeeOnWithdraw(address _user) external returns (bool) {
-        _atLeastRole(ADMIN);
+        _atLeastRole(STRATEGIST);
         return feeOnWithdrawAddresses.add(_user);
     }
 
     function removeFromFeeOnWithdraw(address _user) external returns (bool) {
-        _atLeastRole(ADMIN);
+        _atLeastRole(GUARDIAN);
         return feeOnWithdrawAddresses.remove(_user);
     }
 
@@ -422,7 +400,7 @@ abstract contract ReaperBaseStrategyv3_1 is
     /**
      * @dev subclasses should add their custom harvesting logic in this function
      *      including charging any fees. The amount of fee that is remitted to the
-     *      caller must be returned.
+     *      treasury must be returned.
      */
     function _harvestCore() internal virtual returns (uint256);
 

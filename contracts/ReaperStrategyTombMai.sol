@@ -99,13 +99,13 @@ contract ReaperStrategyTombMai is ReaperBaseStrategyv3_1 {
      *      5. Swaps half of {lpToken0} to {lpToken1} using {TOMB_ROUTER}.
      *      6. Creates new LP tokens and deposits.
      */
-    function _harvestCore() internal override returns (uint256 callerFee) {
+    function _harvestCore() internal override returns (uint256 feeCharged) {
         IMasterChef(TSHARE_REWARDS_POOL).deposit(poolId, 0); // deposit 0 to claim rewards
 
         uint256 tshareBal = IERC20Upgradeable(TSHARE).balanceOf(address(this));
         _swap(tshareBal, tshareToWftmPath, SPOOKY_ROUTER);
 
-        callerFee = _chargeFees();
+        feeCharged = _chargeFees();
 
         uint256 wftmBal = IERC20Upgradeable(WFTM).balanceOf(address(this));
         _swap(wftmBal, wftmToTombPath, SPOOKY_ROUTER);
@@ -142,15 +142,11 @@ contract ReaperStrategyTombMai is ReaperBaseStrategyv3_1 {
      * @dev Core harvest function.
      *      Charges fees based on the amount of WFTM gained from reward
      */
-    function _chargeFees() internal returns (uint256 callerFee) {
+    function _chargeFees() internal returns (uint256 feeCharged) {
         IERC20Upgradeable wftm = IERC20Upgradeable(WFTM);
-        uint256 wftmFee = (wftm.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR;
-        if (wftmFee != 0) {
-            callerFee = (wftmFee * callFee) / PERCENT_DIVISOR;
-            uint256 treasuryFeeToVault = (wftmFee * treasuryFee) / PERCENT_DIVISOR;
-
-            wftm.safeTransfer(msg.sender, callerFee);
-            wftm.safeTransfer(treasury, treasuryFeeToVault);
+        feeCharged = (wftm.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR;
+        if (feeCharged != 0) {
+            wftm.safeTransfer(treasury, feeCharged);
         }
     }
 
