@@ -208,7 +208,7 @@ contract ReaperVaultv1_4 is ERC20, Ownable, ReentrancyGuard {
         uint256 b = token.balanceOf(address(this));
         if (b < r) {
             uint256 _withdraw = r - b;
-            IStrategy(strategy).withdraw(_withdraw);
+            IStrategy(strategy).withdraw(_withdraw, msg.sender);
             uint256 _after = token.balanceOf(address(this));
             uint256 _diff = _after - b;
             if (_diff < _withdraw) {
