@@ -58,9 +58,10 @@ contract TestReaperStrategyTombMaiV2 is ReaperBaseStrategyv3_1 {
         address _vault,
         address _treasury,
         address[] memory _strategists,
-        address[] memory _multisigRoles
+        address[] memory _multisigRoles,
+        address[] memory _keepers
     ) public initializer {
-        __ReaperBaseStrategy_init(_vault, _treasury, _strategists, _multisigRoles);
+        __ReaperBaseStrategy_init(_vault, _treasury, _strategists, _multisigRoles, _keepers);
         tshareToWftmPath = [TSHARE, WFTM];
         wftmToTombPath = [WFTM, lpToken0];
         tombToMaiPath = [lpToken0, lpToken1];

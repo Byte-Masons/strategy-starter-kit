@@ -89,7 +89,7 @@ abstract contract ReaperBaseStrategyv3_1 is
     * @dev List of addresses we want to take a security fee from on withdraw
     * as a way to prevent those from sandwich attacking the strategy.
     */
-    EnumerableSetUpgradeable.AddressSet private blacklistedAddresses;
+    EnumerableSetUpgradeable.AddressSet private feeOnWithdrawAddresses;
 
     /**
      * {TotalFeeUpdated} Event that is fired each time the total fee is updated.
@@ -107,7 +107,8 @@ abstract contract ReaperBaseStrategyv3_1 is
         address _vault,
         address _treasury,
         address[] memory _strategists,
-        address[] memory _multisigRoles
+        address[] memory _multisigRoles,
+        address[] memory _keepers
     ) internal onlyInitializing {
         __UUPSUpgradeable_init();
         __AccessControlEnumerable_init();
@@ -130,6 +131,10 @@ abstract contract ReaperBaseStrategyv3_1 is
         _grantRole(DEFAULT_ADMIN_ROLE, _multisigRoles[0]);
         _grantRole(ADMIN, _multisigRoles[1]);
         _grantRole(GUARDIAN, _multisigRoles[2]);
+
+        for (uint256 i = 0; i < _keepers.length; i = _uncheckedInc(i)) {
+            _grantRole(KEEPER, _keepers[i]);
+        }
 
         cascadingAccess = [DEFAULT_ADMIN_ROLE, ADMIN, GUARDIAN, STRATEGIST, KEEPER];
         clearUpgradeCooldown();
@@ -155,7 +160,7 @@ abstract contract ReaperBaseStrategyv3_1 is
         require(_amount != 0);
         require(_amount <= balanceOf());
 
-        if (blacklistedAddresses.contains(_user)) {
+        if (feeOnWithdrawAddresses.contains(_user)) {
             uint256 withdrawFee = (_amount * securityFee) / PERCENT_DIVISOR;
             _amount -= withdrawFee;
         }
@@ -317,18 +322,18 @@ abstract contract ReaperBaseStrategyv3_1 is
         return -int256(yearlyUnsignedPercentageChange);
     }
 
-    function addToBlacklist(address _user) external returns (bool) {
+    function addToFeeOnWithdraw(address _user) external returns (bool) {
         _atLeastRole(ADMIN);
-        return blacklistedAddresses.add(_user);
+        return feeOnWithdrawAddresses.add(_user);
     }
 
-    function removeFromBlacklist(address _user) external returns (bool) {
+    function removeFromFeeOnWithdraw(address _user) external returns (bool) {
         _atLeastRole(ADMIN);
-        return blacklistedAddresses.remove(_user);
+        return feeOnWithdrawAddresses.remove(_user);
     }
 
-    function isBlacklisted(address _user) external view returns (bool) {
-        return blacklistedAddresses.contains(_user);
+    function isChargedFeeOnWithdraw(address _user) external view returns (bool) {
+        return feeOnWithdrawAddresses.contains(_user);
     }
 
     /**
