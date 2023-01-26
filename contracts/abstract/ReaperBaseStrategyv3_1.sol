@@ -111,7 +111,7 @@ abstract contract ReaperBaseStrategyv3_1 is
 
         harvestLogCadence = 1 minutes;
         totalFee = 450;
-        securityFee = 10;
+        securityFee = 0;
 
         vault = _vault;
         treasury = _treasury;
