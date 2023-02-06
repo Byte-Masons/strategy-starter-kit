@@ -179,7 +179,9 @@ describe('Vaults', function () {
     });
 
     it('previewDeposit returns the number of shares that would be minted on deposit', async function () {
-      const {vault, want, wantHolder, owner} = await loadFixture(deployVaultAndStrategyAndGetSigners);
+      const {vault, strategy, want, wantHolder, strategist, admin, owner} = await loadFixture(
+        deployVaultAndStrategyAndGetSigners,
+      );
       const depositAmount = toWantUnit('10');
       let previewShares = await vault.previewDeposit(depositAmount);
       const userSharesBefore = await vault.balanceOf(wantHolderAddr);
@@ -196,6 +198,17 @@ describe('Vaults', function () {
       await want.connect(wantHolder).transfer(owner.address, ownerDepositAmount);
       await want.connect(owner).approve(vault.address, ethers.constants.MaxUint256);
 
+      // pause strategy
+      const tx = await strategist.sendTransaction({
+        to: adminAddress,
+        value: ethers.utils.parseEther('1.0'),
+      });
+      await tx.wait();
+      await strategy.connect(admin).pause();
+      await expect(vault.previewDeposit(ownerDepositAmount)).to.be.reverted;
+
+      // unpause
+      await strategy.connect(admin).unpause();
       previewShares = await vault.previewDeposit(ownerDepositAmount);
       const ownerSharesBefore = await vault.balanceOf(owner.address);
       await vault.connect(owner)['deposit(uint256,address)'](ownerDepositAmount, owner.address);
@@ -285,7 +298,9 @@ describe('Vaults', function () {
     });
 
     it('previewMint returns the amount of asset taken on a mint', async function () {
-      const {vault, want, wantHolder} = await loadFixture(deployVaultAndStrategyAndGetSigners);
+      const {vault, strategy, want, wantHolder, strategist, admin} = await loadFixture(
+        deployVaultAndStrategyAndGetSigners,
+      );
       let mintAmount = toWantUnit('50');
       let mintPreview = await vault.connect(wantHolder).previewMint(mintAmount);
       expect(mintPreview).to.equal(mintAmount);
@@ -302,7 +317,18 @@ describe('Vaults', function () {
       const transferAmount = toWantUnit('20');
       await want.connect(wantHolder).transfer(vault.address, transferAmount);
 
+      // pause strategy
+      const tx = await strategist.sendTransaction({
+        to: adminAddress,
+        value: ethers.utils.parseEther('1.0'),
+      });
+      await tx.wait();
+      await strategy.connect(admin).pause();
       mintAmount = toWantUnit('13');
+      await expect(vault.connect(wantHolder).previewMint(mintAmount)).to.be.reverted;
+
+      // unpause
+      await strategy.connect(admin).unpause();
       mintPreview = await vault.connect(wantHolder).previewMint(mintAmount);
       expect(mintPreview).to.equal(toWantUnit('18.2'));
       userBalance = await want.balanceOf(wantHolderAddr);

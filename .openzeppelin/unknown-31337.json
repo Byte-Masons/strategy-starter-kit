@@ -3,7 +3,7 @@
   "proxies": [
     {
       "address": "0x8198f5d8F8CfFE8f9C413d98a0A55aEB8ab9FbB7",
-      "txHash": "0x2a12a365a8d39403fa5394d548a910b5a5f2accff8da328e6c3be3f05178a532",
+      "txHash": "0x099723b2f3c11c1eff101d02e6f6a6ab78988c48257d97e30e57be5c443355a9",
       "kind": "uups"
     }
   ],
@@ -708,7 +708,7 @@
     },
     "41ef44b88d224aa7a4401e11b0b259db0df27450fe080279adfab2209ffdcc09": {
       "address": "0x36b58F5C1969B7b6591D752ea6F5486D069010AB",
-      "txHash": "0x869e0c76d0f12cd85e341b6384432cd84b7b507936ee83845a7a348edca03932",
+      "txHash": "0xfb2b8b2c4173532f916808d47479afb46e507f6c0dbbc8606cf3e599a6d51504",
       "layout": {
         "storage": [
           {
@@ -764,7 +764,7 @@
             "label": "_roles",
             "offset": 0,
             "slot": "201",
-            "type": "t_mapping(t_bytes32,t_struct(RoleData)4265_storage)",
+            "type": "t_mapping(t_bytes32,t_struct(RoleData)4285_storage)",
             "contract": "AccessControlUpgradeable",
             "src": "lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol:61"
           },
@@ -780,7 +780,7 @@
             "label": "_roleMembers",
             "offset": 0,
             "slot": "251",
-            "type": "t_mapping(t_bytes32,t_struct(AddressSet)6805_storage)",
+            "type": "t_mapping(t_bytes32,t_struct(AddressSet)6825_storage)",
             "contract": "AccessControlEnumerableUpgradeable",
             "src": "lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlEnumerableUpgradeable.sol:22"
           },
@@ -812,7 +812,7 @@
             "label": "harvestLog",
             "offset": 0,
             "slot": "351",
-            "type": "t_array(t_struct(Harvest)1666_storage)dyn_storage",
+            "type": "t_array(t_struct(Harvest)1686_storage)dyn_storage",
             "contract": "ReaperBaseStrategyv3_2",
             "src": "contracts/abstract/ReaperBaseStrategyv3_2.sol:27"
           },
@@ -918,7 +918,7 @@
             "label": "bytes32[]",
             "numberOfBytes": "32"
           },
-          "t_array(t_struct(Harvest)1666_storage)dyn_storage": {
+          "t_array(t_struct(Harvest)1686_storage)dyn_storage": {
             "label": "struct ReaperBaseStrategyv3_2.Harvest[]",
             "numberOfBytes": "32"
           },
@@ -942,11 +942,11 @@
             "label": "mapping(address => bool)",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_bytes32,t_struct(AddressSet)6805_storage)": {
+          "t_mapping(t_bytes32,t_struct(AddressSet)6825_storage)": {
             "label": "mapping(bytes32 => struct EnumerableSetUpgradeable.AddressSet)",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_bytes32,t_struct(RoleData)4265_storage)": {
+          "t_mapping(t_bytes32,t_struct(RoleData)4285_storage)": {
             "label": "mapping(bytes32 => struct AccessControlUpgradeable.RoleData)",
             "numberOfBytes": "32"
           },
@@ -954,19 +954,19 @@
             "label": "mapping(bytes32 => uint256)",
             "numberOfBytes": "32"
           },
-          "t_struct(AddressSet)6805_storage": {
+          "t_struct(AddressSet)6825_storage": {
             "label": "struct EnumerableSetUpgradeable.AddressSet",
             "members": [
               {
                 "label": "_inner",
-                "type": "t_struct(Set)6504_storage",
+                "type": "t_struct(Set)6524_storage",
                 "offset": 0,
                 "slot": "0"
               }
             ],
             "numberOfBytes": "64"
           },
-          "t_struct(Harvest)1666_storage": {
+          "t_struct(Harvest)1686_storage": {
             "label": "struct ReaperBaseStrategyv3_2.Harvest",
             "members": [
               {
@@ -984,7 +984,7 @@
             ],
             "numberOfBytes": "64"
           },
-          "t_struct(RoleData)4265_storage": {
+          "t_struct(RoleData)4285_storage": {
             "label": "struct AccessControlUpgradeable.RoleData",
             "members": [
               {
@@ -1002,7 +1002,7 @@
             ],
             "numberOfBytes": "64"
           },
-          "t_struct(Set)6504_storage": {
+          "t_struct(Set)6524_storage": {
             "label": "struct EnumerableSetUpgradeable.Set",
             "members": [
               {

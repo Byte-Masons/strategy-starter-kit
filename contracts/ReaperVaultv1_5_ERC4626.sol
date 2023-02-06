@@ -92,6 +92,7 @@ contract ReaperVaultv1_5_ERC4626 is ReaperVaultv1_5, IERC4626Functions {
     // Note that any unfavorable discrepancy between convertToShares and previewDeposit SHOULD be considered slippage in share price
     // or some other type of condition, meaning the depositor will lose assets by depositing.
     function previewDeposit(uint256 assets) external view override returns (uint256 shares) {
+        require(!IPausable(strategy).paused(), "Deposits paused");
         return convertToShares(assets);
     }
 
@@ -135,6 +136,7 @@ contract ReaperVaultv1_5_ERC4626 is ReaperVaultv1_5, IERC4626Functions {
     // Note that any unfavorable discrepancy between convertToAssets and previewMint SHOULD be considered
     // slippage in share price or some other type of condition, meaning the depositor will lose assets by minting.
     function previewMint(uint256 shares) public view override returns (uint256 assets) {
+        require(!IPausable(strategy).paused(), "Mints paused");
         if (totalSupply() == 0) return shares;
         assets = roundUpDiv(shares * balance(), totalSupply());
     }
