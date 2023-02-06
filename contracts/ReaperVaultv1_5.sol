@@ -14,7 +14,7 @@ import "oz-contracts/token/ERC20/utils/SafeERC20.sol";
  * The yield optimizing strategy itself is implemented in a separate 'Strategy.sol' contract.
  */
 contract ReaperVaultv1_5 is ERC20, Ownable, ReentrancyGuard {
-    using SafeERC20 for IERC20;
+    using SafeERC20 for IERC20Metadata;
 
     // The strategy in use by the vault.
     address public strategy;
@@ -30,7 +30,7 @@ contract ReaperVaultv1_5 is ERC20, Ownable, ReentrancyGuard {
     uint256 public constructionTime;
 
     // The token the vault accepts and looks to maximize.
-    IERC20 public token;
+    IERC20Metadata public immutable token;
 
     /**
      * + WEBSITE DISCLAIMER +
@@ -81,9 +81,17 @@ contract ReaperVaultv1_5 is ERC20, Ownable, ReentrancyGuard {
         string memory _symbol,
         uint256 _tvlCap
     ) ERC20(string(_name), string(_symbol)) {
-        token = IERC20(_token);
+        token = IERC20Metadata(_token);
         constructionTime = block.timestamp;
         tvlCap = _tvlCap;
+    }
+
+    /**
+     * @dev Overrides the default 18 decimals for the vault ERC20 to
+     * match the same decimals as the underlying token used
+     */
+    function decimals() public view override returns (uint8) {
+        return token.decimals();
     }
 
     /**
@@ -135,7 +143,8 @@ contract ReaperVaultv1_5 is ERC20, Ownable, ReentrancyGuard {
      * Returns an uint256 with 18 decimals of how much underlying asset one vault share represents.
      */
     function getPricePerFullShare() public view returns (uint256) {
-        return totalSupply() == 0 ? 1e18 : (balance() * 1e18) / totalSupply();
+        uint256 _decimals = decimals();
+        return totalSupply() == 0 ? 10**_decimals : (balance() * 10**_decimals) / totalSupply();
     }
 
     /**
@@ -250,7 +259,7 @@ contract ReaperVaultv1_5 is ERC20, Ownable, ReentrancyGuard {
     function inCaseTokensGetStuck(address _token) external onlyOwner {
         require(_token != address(token), "!token");
 
-        uint256 amount = IERC20(_token).balanceOf(address(this));
-        IERC20(_token).safeTransfer(msg.sender, amount);
+        uint256 amount = IERC20Metadata(_token).balanceOf(address(this));
+        IERC20Metadata(_token).safeTransfer(msg.sender, amount);
     }
 }
