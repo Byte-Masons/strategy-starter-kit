@@ -14,7 +14,7 @@ const moveBlocksForward = async (blocks) => {
 
 const toWantUnit = (num, isUSDC = false) => {
   if (isUSDC) {
-    return ethers.BigNumber.from(num * 10 ** 8);
+    return ethers.utils.parseUnits(num, 6);
   }
   return ethers.utils.parseEther(num);
 };
