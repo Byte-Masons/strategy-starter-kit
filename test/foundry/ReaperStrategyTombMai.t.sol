@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
 import "contracts/ReaperStrategyTombMai.sol";
-import "contracts/ReaperVaultv1_5.sol";
+import "contracts/ReaperVaultv1_5_ERC4626.sol";
 import "contracts/test/TestReaperStrategyTombMaiV2.sol";
 import "contracts/test/TestReaperStrategyTombMaiV3.sol";
 import "oz-contracts/proxy/ERC1967/ERC1967Proxy.sol";
@@ -49,7 +49,7 @@ contract ReaperStrategyTombMaiTest is Test {
 
     // Initialized during set up in initial tests
     // vault, strategy, want, wftm, owner, wantHolder, strategist, guardian, admin, superAdmin, unassignedRole
-    ReaperVaultv1_5 public vault;
+    ReaperVaultv1_5_ERC4626 public vault;
     string public vaultName = "TOMB-MAI Tomb Crypt";
     string public vaultSymbol = "rf-TOMB-MAI";
     uint256 public vaultTvlCap = type(uint256).max;
@@ -70,7 +70,7 @@ contract ReaperStrategyTombMaiTest is Test {
         assertEq(vm.activeFork(), fantomFork);
 
         // Deploying stuff
-        vault = new ReaperVaultv1_5(wantAddress, vaultName, vaultSymbol, vaultTvlCap);
+        vault = new ReaperVaultv1_5_ERC4626(wantAddress, vaultName, vaultSymbol, vaultTvlCap);
         implementation = new ReaperStrategyTombMai();
         proxy = new ERC1967Proxy(address(implementation), "");
         wrappedProxy = ReaperStrategyTombMai(address(proxy));
