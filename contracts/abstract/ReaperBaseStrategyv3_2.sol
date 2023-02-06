@@ -8,15 +8,13 @@ import "oz-upgradeable/access/AccessControlEnumerableUpgradeable.sol";
 import "oz-upgradeable/proxy/utils/Initializable.sol";
 import "oz-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "oz-upgradeable/security/PausableUpgradeable.sol";
-import "oz-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
 
-abstract contract ReaperBaseStrategyv3_1 is
+abstract contract ReaperBaseStrategyv3_2 is
     IStrategy,
     UUPSUpgradeable,
     AccessControlEnumerableUpgradeable,
     PausableUpgradeable
 {
-    using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     uint256 public constant PERCENT_DIVISOR = 10_000;
     uint256 public constant ONE_YEAR = 365 days;
     uint256 public constant UPGRADE_TIMELOCK = 48 hours; // minimum 48 hours for RF
@@ -63,36 +61,21 @@ abstract contract ReaperBaseStrategyv3_1 is
     /**
      * Fee related constants:
      * {MAX_FEE} - Maximum fee allowed by the strategy. Hard-capped at 10%.
-     * {MAX_SECURITY_FEE} - Maximum security fee charged on withdrawal to prevent
-     *                      flash deposit/harvest attacks.
      */
     uint256 public constant MAX_FEE = 1000;
-    uint256 public constant MAX_SECURITY_FEE = 10;
 
     /**
      * @dev Distribution of fees earned, expressed as % of the profit from each harvest.
      * {totalFee} - divided by 10,000 to determine the % fee. Set to 4.5% by default and
      * lowered as necessary to provide users with the most competitive APY.
-     *
-     * {securityFee} - Fee taxed when a user withdraws funds. Taken to prevent flash deposit/harvest attacks.
-     * These funds are redistributed to stakers in the pool.
      */
     uint256 public totalFee;
-    uint256 public securityFee;
-
-    /**
-    * @dev List of addresses we want to take a security fee from on withdraw
-    * as a way to prevent those from sandwich attacking the strategy.
-    */
-    EnumerableSetUpgradeable.AddressSet private feeOnWithdrawAddresses;
 
     /**
      * {TotalFeeUpdated} Event that is fired each time the total fee is updated.
-     * {FeesUpdated} Event that is fired each time callFee+treasuryFee are updated.
      * {StratHarvest} Event that is fired each time the strategy gets harvested.
      */
     event TotalFeeUpdated(uint256 newFee);
-    event FeesUpdated(uint256 newCallFee, uint256 newTreasuryFee);
     event StratHarvest(address indexed harvester);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -111,7 +94,6 @@ abstract contract ReaperBaseStrategyv3_1 is
 
         harvestLogCadence = 1 minutes;
         totalFee = 450;
-        securityFee = 0;
 
         vault = _vault;
         treasury = _treasury;
@@ -145,19 +127,12 @@ abstract contract ReaperBaseStrategyv3_1 is
 
     /**
      * @dev Withdraws funds and sends them back to the vault. Can only
-     *      be called by the vault. _amount must be valid and security fee
-     *      is deducted up-front.
+     *      be called by the vault. _amount must be valid.
      */
-    function withdraw(uint256 _amount, address _user) external override {
+    function withdraw(uint256 _amount) external override {
         require(msg.sender == vault);
         require(_amount != 0);
         require(_amount <= balanceOf());
-
-        if (feeOnWithdrawAddresses.contains(_user) || feeOnWithdrawAddresses.contains(tx.origin)) {
-            uint256 withdrawFee = (_amount * securityFee) / PERCENT_DIVISOR;
-            _amount -= withdrawFee;
-        }
-
         _withdraw(_amount);
     }
 
@@ -246,19 +221,13 @@ abstract contract ReaperBaseStrategyv3_1 is
     }
 
     /**
-     * @dev updates the total fee, capped at 5%; only DEFAULT_ADMIN_ROLE.
+     * @dev updates the total fee, capped at 10%; only DEFAULT_ADMIN_ROLE.
      */
     function updateTotalFee(uint256 _totalFee) external {
         _atLeastRole(DEFAULT_ADMIN_ROLE);
         require(_totalFee <= MAX_FEE);
         totalFee = _totalFee;
         emit TotalFeeUpdated(totalFee);
-    }
-
-    function updateSecurityFee(uint256 _securityFee) external {
-        _atLeastRole(DEFAULT_ADMIN_ROLE);
-        require(_securityFee <= MAX_SECURITY_FEE);
-        securityFee = _securityFee;
     }
 
     /**
@@ -298,20 +267,6 @@ abstract contract ReaperBaseStrategyv3_1 is
         }
 
         return -int256(yearlyUnsignedPercentageChange);
-    }
-
-    function addToFeeOnWithdraw(address _user) external returns (bool) {
-        _atLeastRole(STRATEGIST);
-        return feeOnWithdrawAddresses.add(_user);
-    }
-
-    function removeFromFeeOnWithdraw(address _user) external returns (bool) {
-        _atLeastRole(GUARDIAN);
-        return feeOnWithdrawAddresses.remove(_user);
-    }
-
-    function isChargedFeeOnWithdraw(address _user) external view returns (bool) {
-        return feeOnWithdrawAddresses.contains(_user);
     }
 
     /**
