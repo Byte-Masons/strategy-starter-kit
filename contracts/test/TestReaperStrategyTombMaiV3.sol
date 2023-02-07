@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "../abstract/ReaperBaseStrategyv3_1.sol";
+import "../abstract/ReaperBaseStrategyv3_2.sol";
 import "../interfaces/IMasterChef.sol";
 import "../interfaces/IUniswapV2Router02.sol";
 import "oz-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
@@ -10,7 +10,7 @@ import "oz-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 /**
  * @dev Deposit TOMB-MAI LP in TShareRewardsPool. Harvest TSHARE rewards and recompound.
  */
-contract TestReaperStrategyTombMaiV3 is ReaperBaseStrategyv3_1 {
+contract TestReaperStrategyTombMaiV3 is ReaperBaseStrategyv3_2 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     uint256 public constant DUMMY_CONST = 10_001;

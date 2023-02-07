@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
 import "contracts/ReaperStrategyTombMai.sol";
-import "contracts/ReaperVaultv1_4.sol";
+import "contracts/ReaperVaultv1_5_ERC4626.sol";
 import "contracts/test/TestReaperStrategyTombMaiV2.sol";
 import "contracts/test/TestReaperStrategyTombMaiV3.sol";
 import "oz-contracts/proxy/ERC1967/ERC1967Proxy.sol";
@@ -26,8 +26,6 @@ contract ReaperStrategyTombMaiTest is Test {
 
     address public wantHolderAddr = 0x93a4C7cA8123551ac3FD14D7f7B646DB47b2bb37;
     address public strategistAddr = 0x1A20D7A31e5B3Bc5f02c8A146EF6f394502a10c4;
-
-    address public owner = 0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84;
 
     address[] keepers = [
         0xe0268Aa6d55FfE1AA7A77587e56784e5b29004A2,
@@ -51,10 +49,9 @@ contract ReaperStrategyTombMaiTest is Test {
 
     // Initialized during set up in initial tests
     // vault, strategy, want, wftm, owner, wantHolder, strategist, guardian, admin, superAdmin, unassignedRole
-    ReaperVaultv1_4 public vault;
+    ReaperVaultv1_5_ERC4626 public vault;
     string public vaultName = "TOMB-MAI Tomb Crypt";
     string public vaultSymbol = "rf-TOMB-MAI";
-    uint256 public vaultFee = 0;
     uint256 public vaultTvlCap = type(uint256).max;
 
     ReaperStrategyTombMai public implementation;
@@ -73,7 +70,7 @@ contract ReaperStrategyTombMaiTest is Test {
         assertEq(vm.activeFork(), fantomFork);
 
         // Deploying stuff
-        vault = new ReaperVaultv1_4(wantAddress, vaultName, vaultSymbol, vaultFee, vaultTvlCap);
+        vault = new ReaperVaultv1_5_ERC4626(wantAddress, vaultName, vaultSymbol, vaultTvlCap);
         implementation = new ReaperStrategyTombMai();
         proxy = new ERC1967Proxy(address(implementation), "");
         wrappedProxy = ReaperStrategyTombMai(address(proxy));
@@ -148,7 +145,7 @@ contract ReaperStrategyTombMaiTest is Test {
         wrappedProxy.unpause();
 
         vm.expectRevert("Unauthorized access");
-        wrappedProxy.updateSecurityFee(0);
+        wrappedProxy.updateTotalFee(0);
     }
 
     function testStrategistHasRightPrivileges() public {
@@ -163,7 +160,7 @@ contract ReaperStrategyTombMaiTest is Test {
         wrappedProxy.unpause();
 
         vm.expectRevert("Unauthorized access");
-        wrappedProxy.updateSecurityFee(0);
+        wrappedProxy.updateTotalFee(0);
     }
 
     function testGuardianHasRightPrivilieges() public {
@@ -177,7 +174,7 @@ contract ReaperStrategyTombMaiTest is Test {
         wrappedProxy.unpause();
 
         vm.expectRevert("Unauthorized access");
-        wrappedProxy.updateSecurityFee(0);
+        wrappedProxy.updateTotalFee(0);
     }
 
     function testAdminHasRightPrivileges() public {
@@ -190,7 +187,7 @@ contract ReaperStrategyTombMaiTest is Test {
         wrappedProxy.unpause();
 
         vm.expectRevert("Unauthorized access");
-        wrappedProxy.updateSecurityFee(0);
+        wrappedProxy.updateTotalFee(0);
     }
 
     function testSuperAdminOrOwnerHasRightPrivileges() public {
@@ -202,7 +199,7 @@ contract ReaperStrategyTombMaiTest is Test {
 
         wrappedProxy.unpause();
 
-        wrappedProxy.updateSecurityFee(0);
+        wrappedProxy.updateTotalFee(0);
     }
 
     ///------ VAULT AND STRATEGY------\\\
@@ -217,28 +214,33 @@ contract ReaperStrategyTombMaiTest is Test {
     }
 
     function testVaultCanMintUserPoolShare() public {
+        address alice = makeAddr("alice");
+
         vm.startPrank(wantHolderAddr);
         uint256 depositAmount = (want.balanceOf(wantHolderAddr) * 2000) / 10000;
         vault.deposit(depositAmount);
-
-        uint256 ownerDepositAmount = (want.balanceOf(wantHolderAddr) * 5000) / 10000;
-        want.transfer(owner, ownerDepositAmount);
+        uint256 aliceDepositAmount = (want.balanceOf(wantHolderAddr) * 5000) / 10000;
+        want.transfer(alice, aliceDepositAmount);
         vm.stopPrank();
-        want.approve(address(vault), ownerDepositAmount);
-        vault.deposit(ownerDepositAmount);
+
+        vm.startPrank(alice);
+        want.approve(address(vault), aliceDepositAmount);
+        vault.deposit(aliceDepositAmount);
+        vm.stopPrank();
 
         uint256 allowedImprecision = 1e15;
 
         uint256 userVaultBalance = vault.balanceOf(wantHolderAddr);
         assertApproxEqRel(userVaultBalance, depositAmount, allowedImprecision);
-        uint256 ownerVaultBalance = vault.balanceOf(owner);
-        assertApproxEqRel(ownerVaultBalance, ownerDepositAmount, allowedImprecision);
+        uint256 aliceVaultBalance = vault.balanceOf(alice);
+        assertApproxEqRel(aliceVaultBalance, aliceDepositAmount, allowedImprecision);
 
+        vm.prank(alice);
         vault.withdrawAll();
-        uint256 ownerWantBalance = want.balanceOf(owner);
-        assertApproxEqRel(ownerWantBalance, ownerDepositAmount, allowedImprecision);
-        ownerVaultBalance = vault.balanceOf(owner);
-        assertEq(ownerVaultBalance, 0);
+        uint256 aliceWantBalance = want.balanceOf(alice);
+        assertApproxEqRel(aliceWantBalance, aliceDepositAmount, allowedImprecision);
+        aliceVaultBalance = vault.balanceOf(alice);
+        assertEq(aliceVaultBalance, 0);
     }
 
     function testVaultAllowsWithdrawals() public {
@@ -253,17 +255,20 @@ contract ReaperStrategyTombMaiTest is Test {
     }
 
     function testVaultAllowsSmallWithdrawal() public {
-        vm.startPrank(wantHolderAddr);
-        uint256 ownerDepositAmount = (want.balanceOf(wantHolderAddr) * 1000) / 10000;
-        want.transfer(owner, ownerDepositAmount);
+        address alice = makeAddr("alice");
 
+        vm.startPrank(wantHolderAddr);
+        uint256 aliceDepositAmount = (want.balanceOf(wantHolderAddr) * 1000) / 10000;
+        want.transfer(alice, aliceDepositAmount);
         uint256 userBalance = want.balanceOf(wantHolderAddr);
         uint256 depositAmount = (want.balanceOf(wantHolderAddr) * 100) / 10000;
         vault.deposit(depositAmount);
-
         vm.stopPrank();
+
+        vm.startPrank(alice);
         want.approve(address(vault), type(uint256).max);
-        vault.deposit(ownerDepositAmount);
+        vault.deposit(aliceDepositAmount);
+        vm.stopPrank();
 
         vm.prank(wantHolderAddr);
         vault.withdrawAll();
@@ -284,30 +289,15 @@ contract ReaperStrategyTombMaiTest is Test {
         assertEq(userBalance, userBalanceAfterWithdraw);
     }
 
-    function testVaultTaxableAddress() public {
-        uint256 userBalance = want.balanceOf(wantHolderAddr);
-        uint256 depositAmount = (want.balanceOf(wantHolderAddr) * 5000) / 10000;
-        vm.prank(adminAddress);
-        wrappedProxy.addToFeeOnWithdraw(wantHolderAddr);
-        vm.startPrank(wantHolderAddr);
-        vault.deposit(depositAmount);
-        vault.withdrawAll();
-        uint256 userBalanceAfterWithdraw = want.balanceOf(wantHolderAddr);
-
-        uint256 securityFee = 10;
-        uint256 percentDivisor = 10000;
-        uint256 withdrawFee = (depositAmount * securityFee) / percentDivisor;
-        uint256 expectedBalance = userBalance - withdrawFee;
-        uint256 smallDifference = expectedBalance / 200;
-        bool isSmallBalanceDifference = (expectedBalance - userBalanceAfterWithdraw) < smallDifference;
-        assertEq(isSmallBalanceDifference, true);
-    }
-
     function testCanHarvest() public {
         uint256 timeToSkip = 3600;
         vm.prank(wantHolderAddr);
         vault.deposit(1e21);
         skip(timeToSkip);
+
+        vm.prank(makeAddr("alice"));
+        vm.expectRevert("Unauthorized access");
+        wrappedProxy.harvest();
 
         uint256 wftmBalBefore = wftm.balanceOf(treasuryAddr);
         vm.prank(keepers[0]);
