@@ -81,9 +81,9 @@ abstract contract ReaperBaseStrategyv3_1 is
     uint256 public securityFee;
 
     /**
-    * @dev List of addresses we want to take a security fee from on withdraw
-    * as a way to prevent those from sandwich attacking the strategy.
-    */
+     * @dev List of addresses we want to take a security fee from on withdraw
+     * as a way to prevent those from sandwich attacking the strategy.
+     */
     EnumerableSetUpgradeable.AddressSet private feeOnWithdrawAddresses;
 
     /**
@@ -111,7 +111,7 @@ abstract contract ReaperBaseStrategyv3_1 is
 
         harvestLogCadence = 1 minutes;
         totalFee = 450;
-        securityFee = 0;
+        securityFee = 10;
 
         vault = _vault;
         treasury = _treasury;

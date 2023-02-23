@@ -29,7 +29,7 @@ async function main() {
     '0xe0268Aa6d55FfE1AA7A77587e56784e5b29004A2',
     '0xf58d534290Ce9fc4Ea639B8b9eE238Fe83d2efA6',
     '0xCcb4f4B05739b6C62D9663a5fA7f1E2693048019',
-  ]
+  ];
 
   const strategy = await upgrades.deployProxy(
     Strategy,
