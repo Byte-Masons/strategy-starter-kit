@@ -98,38 +98,38 @@ contract ReaperStrategyTombMaiTest is Test {
 
     function testCannotUpgradeWithoutInitiatingCooldown() public {
         vm.expectRevert();
-        wrappedProxy.upgradeTo(address(implementationV2));
+        wrappedProxy.upgradeToAndCall(address(implementationV2), "");
     }
 
     function testCannotUpgradeBeforeTimelockPassed() public {
         wrappedProxy.initiateUpgradeCooldown();
 
         vm.expectRevert();
-        wrappedProxy.upgradeTo(address(implementationV2));
+        wrappedProxy.upgradeToAndCall(address(implementationV2), "");
     }
 
     function testCanUpgradeOnceTimelockPassed() public {
         uint256 timeToSkip = wrappedProxy.UPGRADE_TIMELOCK() + 10;
         wrappedProxy.initiateUpgradeCooldown();
         skip(timeToSkip);
-        wrappedProxy.upgradeTo(address(implementationV2));
+        wrappedProxy.upgradeToAndCall(address(implementationV2), "");
     }
 
     function testSuccessiveUpgradesNeedToInitiateTimelockAgain() public {
         uint256 timeToSkip = wrappedProxy.UPGRADE_TIMELOCK() + 10;
         wrappedProxy.initiateUpgradeCooldown();
         skip(timeToSkip);
-        wrappedProxy.upgradeTo(address(implementationV2));
+        wrappedProxy.upgradeToAndCall(address(implementationV2), "");
 
         vm.expectRevert();
-        wrappedProxy.upgradeTo(address(implementationV3));
+        wrappedProxy.upgradeToAndCall(address(implementationV3), "");
 
         wrappedProxy.initiateUpgradeCooldown();
         vm.expectRevert();
-        wrappedProxy.upgradeTo(address(implementationV3));
+        wrappedProxy.upgradeToAndCall(address(implementationV3), "");
 
         skip(timeToSkip);
-        wrappedProxy.upgradeTo(address(implementationV3));
+        wrappedProxy.upgradeToAndCall(address(implementationV3), "");
     }
 
     ///------ ACCESS CONTROL ------\\\
@@ -354,7 +354,7 @@ contract ReaperStrategyTombMaiTest is Test {
         wrappedProxy.pause();
         uint256 depositAmount = (want.balanceOf(wantHolderAddr) * 5000) / 10000;
         vm.prank(wantHolderAddr);
-        vm.expectRevert("Pausable: paused");
+        vm.expectRevert();
         vault.deposit(depositAmount);
 
         wrappedProxy.unpause();

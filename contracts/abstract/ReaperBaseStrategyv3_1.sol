@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "../interfaces/IStrategy.sol";
 import "../interfaces/IVault.sol";
-import "oz-upgradeable/access/AccessControlEnumerableUpgradeable.sol";
+import "oz-upgradeable/access/extensions/AccessControlEnumerableUpgradeable.sol";
 import "oz-upgradeable/proxy/utils/Initializable.sol";
 import "oz-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "oz-upgradeable/security/PausableUpgradeable.sol";
