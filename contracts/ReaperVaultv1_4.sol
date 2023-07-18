@@ -83,7 +83,7 @@ contract ReaperVaultv1_4 is ERC20, Ownable, ReentrancyGuard {
         string memory _symbol,
         uint256 _depositFee,
         uint256 _tvlCap
-    ) ERC20(string(_name), string(_symbol)) Ownable(msg.sender) {
+    ) ERC20(string(_name), string(_symbol)) {
         token = IERC20(_token);
         constructionTime = block.timestamp;
         depositFee = _depositFee;
